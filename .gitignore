@@ -1,0 +1,8 @@
+cusip.xlsx
+balance.xlsx
+repo_reassignment_result.xlsx
+repo_reassignment_2.py
+result*.json
+
+# ignore venv folder
+venv
