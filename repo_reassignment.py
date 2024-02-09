@@ -6,6 +6,7 @@ from collections import defaultdict
 import time
 import json
 import pulp
+from datetime import date
 
 pulp.LpSolverDefault.msg = 1
 
@@ -63,7 +64,6 @@ def assign_items_to_categories(items, categories, category_limits) -> dict[str, 
 
     # Solve the problem
     model.solve()
-    model.writeLP('model.lp')
     # Extract the solution
     assignment_result = {category: [] for category in categories}
     for i in range(n):
@@ -87,30 +87,42 @@ if __name__ == '__main__':
 
     # Get the content of the excel cusip file (on the first sheet)
     dfs_items = pd.read_excel(cmd_args[0], sheet_name=0)
+    # Drop any rows that contains missing values
+    dfs_items = dfs_items.dropna(subset=['CUSIP', 'Market Value'])
     # Get the content of the excel categories total balance file (on the first sheet)
     dfs_categories = pd.read_excel(cmd_args[1], sheet_name=0)
+    # Drop any rows that contains missing values
+    dfs_categories = dfs_categories.dropna()
     categories = dfs_categories['Title'].values
     repo_items = []
     category_limits = defaultdict(float)
+    total_market_value, total_balance = 0, 0
     # category_limits = dfs_categories['Current DDA Balance'].values
     for i, (cusip, m_value) in dfs_items[['CUSIP', 'Market Value']].iterrows():
         repo_items.append({
             'cusip': cusip,
             'price': m_value,
         })
+        total_market_value += m_value
 
     for i, (title, balance) in dfs_categories[['Title', 'Current DDA Balance']].iterrows():
         category_limits[title] = balance
+        total_balance += balance
+
+    
+    # if total market value is smaller than total balance, then raise an error
+    if total_market_value < total_balance:
+        raise SystemError("Total market value of all items is less than total DDA balance of all client! Please add more items.")
 
     result = assign_items_to_categories(repo_items, categories, category_limits) 
    
     # write result to a JSON file (with price)
-    with open('result_price.json', 'w', encoding='utf-8') as f:
+    with open(f'repo_reassignment_price_{date.today().strftime("%m%d%Y")}.json', 'w', encoding='utf-8') as f:
         json.dump(result, f, ensure_ascii=False, indent=4)
 
      # write result to a JSON file (without price)
     result = {cat: [item['cusip'] for item in result[cat]] for cat in result}
-    with open('result.json', 'w', encoding='utf-8') as f:
+    with open(f'repo_reassignment_{date.today().strftime("%m%d%Y")}.json', 'w', encoding='utf-8') as f:
         json.dump(result, f, ensure_ascii=False, indent=4)
     
 

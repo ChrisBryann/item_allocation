@@ -1,6 +1,7 @@
 import json
 import sys
 import pandas as pd
+from datetime import date
 
 if __name__ == '__main__':
     (pathname, *cmd_args) = sys.argv
@@ -12,7 +13,7 @@ if __name__ == '__main__':
     df_categories = pd.read_excel(cmd_args[0], sheet_name=0)
     # Load the result JSON file
     result = None
-    with open('result.json', 'r', encoding='utf-8') as f:
+    with open(f'repo_reassignment_price_{date.today().strftime("%m%d%Y")}.json', 'r', encoding='utf-8') as f:
         result = json.load(f)
 
     category_assignment = {}
