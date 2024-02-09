@@ -7,7 +7,7 @@ Let:
 - $p_i$ be the price of item $i$.
 - $c_j$ be the price limit of category $j$.
 
-The objective is to minimize or maximize a linear objective function. Since there is no specific objective mentioned in your problem statement, we can simply minimize the total cost.
+The objective is to minimize or maximize a linear objective function. Since there is no specific objective mentioned in your problem statement, we can simply maximize the total cost.
 
 The constraints are as follows:
 1. Each item must be assigned to exactly one category:
@@ -23,10 +23,11 @@ $$
 $$
 
 Subject to:
-$$
+```math
 \begin{align*}
 & \sum_{j} x_{ij} = 1 \quad && \text{for all } i \\
-& \sum_{i} p_i \cdot x_{ij} \leq c_j \quad && \text{for all } j \\
+& \sum_{i} p_i \cdot x_{ij} \geq c_j \quad && \text{for all } j \\
 & x_{ij} \in \{0, 1\} \quad && \text{for all } i, j
 \end{align*}
-$$
+```
+
