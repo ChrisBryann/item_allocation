@@ -127,8 +127,8 @@ if __name__ == '__main__':
 
     connectionString = f'''
     DRIVER={"{SQL Server Native Client 11.0}"};
-    SERVER=FFS-AZ-PDWT02;
-    DATABASE=BIDW;
+    SERVER={os.environ['SQL_SERVER']};
+    DATABASE={os.environ['SQL_DATABASE']};
     UID={os.environ['SQL_USER']};
     PWD={os.environ['SQL_PASSWORD']};
     '''
