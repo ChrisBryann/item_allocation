@@ -3,6 +3,10 @@ balance.xlsx
 repo_reassignment_result.xlsx
 repo_reassignment_2.py
 repo_reassignment*.json
+repo_reassignment*.txt
 
 # ignore venv folder
 venv
+
+# ignore environment variables
+.env

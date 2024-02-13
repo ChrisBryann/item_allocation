@@ -1,12 +1,13 @@
 import sys
 import pandas as pd
-import numpy as np
-from scipy.optimize import linprog
 from collections import defaultdict
 import time
 import json
 import pulp
 from datetime import date
+import pyodbc
+from dotenv import load_dotenv
+import os
 
 pulp.LpSolverDefault.msg = 1
 
@@ -78,6 +79,7 @@ def assign_items_to_categories(items, categories, category_limits) -> dict[str, 
 
 
 if __name__ == '__main__':
+    load_dotenv()
     (pathname, *cmd_args) = sys.argv
     
     if len(cmd_args) != 2:
@@ -120,12 +122,47 @@ if __name__ == '__main__':
     with open(f'repo_reassignment_price_{date.today().strftime("%m%d%Y")}.json', 'w', encoding='utf-8') as f:
         json.dump(result, f, ensure_ascii=False, indent=4)
 
-     # write result to a JSON file (without price)
+    # write result to a txt file (without price)
     result = {cat: [item['cusip'] for item in result[cat]] for cat in result}
-    with open(f'repo_reassignment_{date.today().strftime("%m%d%Y")}.json', 'w', encoding='utf-8') as f:
-        json.dump(result, f, ensure_ascii=False, indent=4)
-    
 
+    connectionString = f'''
+    DRIVER={"{SQL Server Native Client 11.0}"};
+    SERVER=FFS-AZ-PDWT02;
+    DATABASE=BIDW;
+    UID={os.environ['SQL_USER']};
+    PWD={os.environ['SQL_PASSWORD']};
+    '''
+
+    db = pyodbc.connect(connectionString)
+
+    # Check if the cusip ID is present
+    cusip_exist = '''
+    SELECT COUNT(*)
+    FROM [dbo].t_RepoReassignment
+    WHERE CUSIP_ID=?
+    '''
+    # Update if the cusip ID is present
+    cusip_update = '''
+    UPDATE [dbo].t_RepoReassignment
+    SET Customer_Name=?
+    WHERE CUSIP_ID=?
+    '''
+    # Insert if the cusip ID is not present
+    cusip_insert = '''
+    INSERT INTO [dbo].t_RepoReassignment (CUSIP_ID, Customer_Name)
+    VALUES (?, ?)
+    '''
+    with db.cursor() as db_cursor:
+        for cat in result:
+            for cusip in result[cat]:
+                
+                if db_cursor.execute(cusip_exist, cusip).fetchone()[0]:
+                    # Update result
+                    db_cursor.execute(cusip_update, cat, cusip)
+                else:
+                    # Insert result
+                    db_cursor.execute(cusip_insert, cusip, cat)
+    db.close()
     end = time.time()
 
     print(f'Time to execute: {(end - start):.2f} seconds')
